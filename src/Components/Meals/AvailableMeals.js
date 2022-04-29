@@ -1,36 +1,61 @@
+import { useEffect, useState } from 'react';
 import Card from '../UI/Card';
 import MealsItem from './MealItems/MealsItem';
 import classes from './AvailableMeals.module.css';
 
-const DUMMY_MEALS = [
-    {
-        id: 'm1',
-        name: 'Sushi',
-        description: 'Finest fish and veggies',
-        price: 22.99,
-    },
-    {
-        id: 'm2',
-        name: 'Schnitzel',
-        description: 'A german specialty!',
-        price: 16.5,
-    },
-    {
-        id: 'm3',
-        name: 'Barbecue Burger',
-        description: 'American, raw, meaty',
-        price: 12.99,
-    },
-    {
-        id: 'm4',
-        name: 'Green Bowl',
-        description: 'Healthy...and green...',
-        price: 18.99,
-    },
-];
+const AvailableMeals = props => {
+    const [meals, setMeals] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [hasError, setHasError] = useState();
 
-const AvailableMeals = (props) => {
-    const meals = DUMMY_MEALS.map((meal) => {
+    useEffect(() => {
+        const fetchMeals = async () => {
+            setIsLoading(true);
+            const response = await fetch(
+                'https://mrcarb-cedb4-default-rtdb.firebaseio.com/meals.json'
+            );
+
+            if (!response.ok) {
+                throw new Error('Something went wrong!!!! 💔💔');
+            }
+
+            const responseData = await response.json();
+            let receivedMeals = [];
+
+            for (const key in responseData) {
+                receivedMeals.push({
+                    ...responseData[key],
+                    id: key,
+                });
+            }
+
+            setMeals(receivedMeals);
+            setIsLoading(false);
+        };
+
+        fetchMeals().catch(error => {
+            setIsLoading(false);
+            setHasError(error.message);
+        });
+    }, []);
+
+    if (isLoading) {
+        return (
+            <section className={classes['loading-message']}>
+                <p>Loading..... 🙄🙄</p>
+            </section>
+        );
+    }
+
+    if (hasError) {
+        return (
+            <section className={classes['error-message']}>
+                <p>{hasError}</p>
+            </section>
+        );
+    }
+
+    const renderedMeals = meals.map(meal => {
         return (
             <MealsItem
                 key={meal.id}
@@ -45,7 +70,7 @@ const AvailableMeals = (props) => {
     return (
         <section className={classes.meals}>
             <Card>
-                <ul>{meals}</ul>
+                <ul>{renderedMeals}</ul>
             </Card>
         </section>
     );
